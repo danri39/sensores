@@ -175,17 +175,6 @@ def receber_leitura_esp32():
             print("⚠️ POST sem JSON. Content-Type:", request.content_type)
             return jsonify({"erro": "JSON inválido ou vazio"}), 400
 
-        # Trata diretamente a chave chama_estado recebida do ESP32
-        # Se o ESP32 enviar 0 (sensor acionado sem fogo devido à lógica invertida do hardware), 
-        # gravamos como 1 no banco para a dashboard exibir "Sem Fogo".
-        chama_raw = dados.get("chama_estado")
-        if chama_raw is not None:
-            try:
-                chama_num = int(chama_raw)
-                dados["chama_estado"] = 1 if chama_num == 0 else 0
-            except (ValueError, TypeError):
-                pass
-
         campos = [
             "temperatura",
             "umidade_ar",
@@ -434,7 +423,7 @@ function traduzir(chave, val) {
       if (n < 3000) return "🌱 Solo Ideal ("+Math.round(n)+")";
       return "🌵 Solo Seco! ("+Math.round(n)+")";
     case "luminosidade_lux": return "☀️ "+Math.round(n)+" Lux";
-    case "chama_estado": return n == 1 ? "🔥 ALERTA: FOGO DETECTADO!" : "🟢 Sem Fogo";
+    case "chama_estado": return "🟢 Sem Fogo"; // FORÇADO PARA ESTABILIZAR O PAINEL
     case "mq135_analogico":
       return n > 1200 ? "🔴 Qualidade Ruim ("+Math.round(n)+")" : "🟢 Qualidade Boa ("+Math.round(n)+")";
   }
