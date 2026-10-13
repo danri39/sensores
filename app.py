@@ -12,32 +12,31 @@ logger = logging.getLogger(__name__)
 # ==============================================================================
 # CONEXÃO COM O POSTGRESQL (NEON.TECH)
 # ==============================================================================
-# Cole abaixo a sua string de conexão completa do Neon (começa com postgresql://)
 DATABASE_URL = "postgresql://neondb_owner:npg_MJQXi47YRVtw@ep-billowing-frog-b6gb0x6j-pooler.c-2.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 _conn_global = None
 
 
 def obter_conexao_banco():
-  global _conn_global
+    global _conn_global
 
-  if _conn_global is not None:
-    try:
-      cur = _conn_global.cursor()
-      cur.execute("SELECT 1")
-      cur.close()
-      return _conn_global
-    except psycopg2.Error:
-      logger.exception("Database connection error")
-      try:
-        _conn_global.close()
-      except psycopg2.Error:
-        logger.exception("Error closing connection")
-      _conn_global = None
+    if _conn_global is not None:
+        try:
+            cur = _conn_global.cursor()
+            cur.execute("SELECT 1")
+            cur.close()
+            return _conn_global
+        except psycopg2.Error:
+            logger.exception("Database connection error")
+            try:
+                _conn_global.close()
+            except psycopg2.Error:
+                logger.exception("Error closing connection")
+            _conn_global = None
 
-  _conn_global = psycopg2.connect(DATABASE_URL)
-  _conn_global.autocommit = False
-  return _conn_global
+    _conn_global = psycopg2.connect(DATABASE_URL)
+    _conn_global.autocommit = False
+    return _conn_global
 
 
 COLUNAS_VALIDAS = [
@@ -61,10 +60,10 @@ COLUNAS_VALIDAS = [
 
 @app.route("/api/leituras/ultima", methods=["GET"])
 def obter_ultima_leitura():
-  try:
-    conn = obter_conexao_banco()
-    cursor = conn.cursor()
-    cursor.execute("""
+    try:
+        conn = obter_conexao_banco()
+        cursor = conn.cursor()
+        cursor.execute("""
             SELECT 
                 id,
                 TO_CHAR(data_hora, 'YYYY-MM-DD HH24:MI:SS') AS data_hora,
@@ -75,42 +74,42 @@ def obter_ultima_leitura():
             ORDER BY id DESC
             LIMIT 1;
         """)
-    row = cursor.fetchone()
-    cursor.close()
+        row = cursor.fetchone()
+        cursor.close()
 
-    if row:
-      return (
-          jsonify({
-              "id": row[0],
-              "data_hora": row[1],
-              "temperatura": row[2],
-              "umidade_ar": row[3],
-              "chuva_analogico": row[4],
-              "chuva_estado": row[5],
-              "gas_analogico": row[6],
-              "gas_estado": row[7],
-              "solo_analogico": row[8],
-              "luminosidade_lux": row[9],
-              "chama_estado": row[10],
-              "mq135_analogico": row[11],
-          }),
-          200,
-      )
-    return jsonify({"erro": "Nenhum dado encontrado"}), 404
+        if row:
+            return (
+                jsonify({
+                    "id": row[0],
+                    "data_hora": row[1],
+                    "temperatura": row[2],
+                    "umidade_ar": row[3],
+                    "chuva_analogico": row[4],
+                    "chuva_estado": row[5],
+                    "gas_analogico": row[6],
+                    "gas_estado": row[7],
+                    "solo_analogico": row[8],
+                    "luminosidade_lux": row[9],
+                    "chama_estado": row[10],
+                    "mq135_analogico": row[11],
+                }),
+                200,
+            )
+        return jsonify({"erro": "Nenhum dado encontrado"}), 404
 
-  except psycopg2.Error as e:
-    print(f"Erro em /api/leituras/ultima: {e}")
-    return jsonify({"erro": str(e)}), 500
+    except psycopg2.Error as e:
+        print(f"Erro em /api/leituras/ultima: {e}")
+        return jsonify({"erro": str(e)}), 500
 
 
 @app.route("/api/leituras/historico/<sensor>", methods=["GET"])
 def obter_historico_sensor(sensor):
-  if sensor not in COLUNAS_VALIDAS:
-    return jsonify({"erro": "Sensor inválido"}), 400
-  try:
-    conn = obter_conexao_banco()
-    cursor = conn.cursor()
-    cursor.execute(f"""
+    if sensor not in COLUNAS_VALIDAS:
+        return jsonify({"erro": "Sensor inválido"}), 400
+    try:
+        conn = obter_conexao_banco()
+        cursor = conn.cursor()
+        cursor.execute(f"""
             SELECT 
                 id,
                 TO_CHAR(data_hora, 'YYYY-MM-DD HH24:MI:SS') AS data_hora,
@@ -119,96 +118,100 @@ def obter_historico_sensor(sensor):
             ORDER BY id DESC
             LIMIT 50;
         """)
-    rows = cursor.fetchall()
-    cursor.close()
-    return (
-        jsonify([{"id": r[0], "data_hora": r[1], "valor": r[2]} for r in rows]),
-        200,
-    )
+        rows = cursor.fetchall()
+        cursor.close()
+        return (
+            jsonify([{"id": r[0], "data_hora": r[1], "valor": r[2]} for r in rows]),
+            200,
+        )
 
-  except psycopg2.Error as e:
-    print(f"Erro em /api/leituras/historico/{sensor}: {e}")
-    return jsonify({"erro": str(e)}), 500
+    except psycopg2.Error as e:
+        print(f"Erro em /api/leituras/historico/{sensor}: {e}")
+        return jsonify({"erro": str(e)}), 500
 
 
 @app.route("/api/leituras/medias/<sensor>", methods=["GET"])
 def obter_medias(sensor):
-  if sensor not in COLUNAS_VALIDAS:
-    return jsonify({"erro": "Sensor inválido"}), 400
-  try:
-    conn = obter_conexao_banco()
-    cursor = conn.cursor()
-    cursor.execute(
-        f"""
+    if sensor not in COLUNAS_VALIDAS:
+        return jsonify({"erro": "Sensor inválido"}), 400
+    try:
+        conn = obter_conexao_banco()
+        cursor = conn.cursor()
+        cursor.execute(
+            f"""
             SELECT
                 (SELECT AVG(CAST({sensor} AS FLOAT)) FROM leituras WHERE CAST(data_hora AS DATE) = CURRENT_DATE),
                 (SELECT AVG(CAST({sensor} AS FLOAT)) FROM leituras WHERE EXTRACT(MONTH FROM data_hora) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM data_hora) = EXTRACT(YEAR FROM CURRENT_DATE)),
                 (SELECT AVG(CAST({sensor} AS FLOAT)) FROM leituras WHERE EXTRACT(YEAR FROM data_hora) = EXTRACT(YEAR FROM CURRENT_DATE));
         """
-    )
-    row = cursor.fetchone()
-    cursor.close()
-    return (
-        jsonify({
-            "dia": round(row[0], 2)
-            if row and row[0] is not None
-            else None,
-            "mes": round(row[1], 2)
-            if row and row[1] is not None
-            else None,
-            "ano": round(row[2], 2)
-            if row and row[2] is not None
-            else None,
-        }),
-        200,
-    )
+        )
+        row = cursor.fetchone()
+        cursor.close()
+        return (
+            jsonify({
+                "dia": round(row[0], 2)
+                if row and row[0] is not None
+                else None,
+                "mes": round(row[1], 2)
+                if row and row[1] is not None
+                else None,
+                "ano": round(row[2], 2)
+                if row and row[2] is not None
+                else None,
+            }),
+            200,
+        )
 
-  except (psycopg2.Error, TypeError, ValueError) as e:
-    print(f"Erro ao calcular médias de {sensor}: {e}")
-    return jsonify({"dia": None, "mes": None, "ano": None}), 500
+    except (psycopg2.Error, TypeError, ValueError) as e:
+        print(f"Erro ao calcular médias de {sensor}: {e}")
+        return jsonify({"dia": None, "mes": None, "ano": None}), 500
 
 
 @app.route("/api/leituras", methods=["POST"])
 def receber_leitura_esp32():
-  try:
-    dados = request.get_json(silent=True, force=True)
-    if dados is None:
-      print("⚠️ POST sem JSON. Content-Type:", request.content_type)
-      return jsonify({"erro": "JSON inválido ou vazio"}), 400
+    try:
+        dados = request.get_json(silent=True, force=True)
+        if dados is None:
+            print("⚠️ POST sem JSON. Content-Type:", request.content_type)
+            return jsonify({"erro": "JSON inválido ou vazio"}), 400
 
-    campos = [
-        "temperatura",
-        "umidade_ar",
-        "chuva_analogico",
-        "chuva_estado",
-        "gas_analogico",
-        "gas_estado",
-        "solo_analogico",
-        "luminosidade_lux",
-        "chama_estado",
-        "mq135_analogico",
-    ]
-    valores = [dados.get(c) for c in campos]
+        campos = [
+            "temperatura",
+            "umidade_ar",
+            "chuva_analogico",
+            "chuva_estado",
+            "gas_analogico",
+            "gas_estado",
+            "solo_analogico",
+            "luminosidade_lux",
+            "chama_estado",
+            "mq135_analogico",
+        ]
+        valores = [dados.get(c) for c in campos]
 
-    conn = obter_conexao_banco()
-    cursor = conn.cursor()
-    cursor.execute(
-        """
+        # Tratamento opcional para corrigir a lógica invertida do sensor de chama (índice 8)
+        # Se o ESP32 enviar 0 para fogo e 1 para sem fogo, podemos inverter caso necessário.
+        # Exemplo: se valores[8] == 0: valores[8] = 1 (ou vice-versa se preferir tratar no backend)
+
+        conn = obter_conexao_banco()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
             INSERT INTO leituras (
                 data_hora, temperatura, umidade_ar, chuva_analogico, chuva_estado,
                 gas_analogico, gas_estado, solo_analogico, luminosidade_lux,
                 chama_estado, mq135_analogico
-            ) VALUES (NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+            ) VALUES (NOW() - INTERVAL '3 hours', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
         """,
-        tuple(valores),
-    )
-    conn.commit()
-    cursor.close()
-    return jsonify({"status": "sucesso"}), 201
+            tuple(valores),
+        )
+        conn.commit()
+        cursor.close()
+        return jsonify({"status": "sucesso"}), 201
 
-  except (psycopg2.Error, TypeError, ValueError) as e:
-    print(f"Erro ao inserir leitura: {e}")
-    return jsonify({"erro": str(e)}), 500
+    except (psycopg2.Error, TypeError, ValueError) as e:
+        print(f"Erro ao inserir leitura: {e}")
+        return jsonify({"erro": str(e)}), 500
 
 
 # ==============================================================================
@@ -221,106 +224,106 @@ _cache_clima = {}
 
 
 def _geocodificar(nome_cidade):
-  r = requests.get(
-      _GEO_URL,
-      params={"name": nome_cidade, "count": 1, "language": "pt", "format": "json"},
-      timeout=8,
-  )
-  r.raise_for_status()
-  dados = r.json()
-  if not dados.get("results"):
-    raise ValueError(f"Cidade não encontrada: {nome_cidade}")
-  item = dados["results"][0]
-  return {
-      "nome": item.get("name"),
-      "pais": item.get("country"),
-      "lat": item["latitude"],
-      "lon": item["longitude"],
-  }
+    r = requests.get(
+        _GEO_URL,
+        params={"name": nome_cidade, "count": 1, "language": "pt", "format": "json"},
+        timeout=8,
+    )
+    r.raise_for_status()
+    dados = r.json()
+    if not dados.get("results"):
+        raise ValueError(f"Cidade não encontrada: {nome_cidade}")
+    item = dados["results"][0]
+    return {
+        "nome": item.get("name"),
+        "pais": item.get("country"),
+        "lat": item["latitude"],
+        "lon": item["longitude"],
+    }
 
 
 def _clima_cidade(nome_cidade, ano, mes_ini, mes_fim):
-  geo = _geocodificar(nome_cidade)
+    geo = _geocodificar(nome_cidade)
 
-  hoje = datetime.now(tz=timezone.utc).date()
-  usar_forecast = ano >= hoje.year
-  url = _FORECAST_URL if usar_forecast else _ARCHIVE_URL
+    hoje = datetime.now(tz=timezone.utc).date()
+    usar_forecast = ano >= hoje.year
+    url = _FORECAST_URL if usar_forecast else _ARCHIVE_URL
 
-  dia_ini = f"{ano}-{mes_ini:02d}-01"
-  ultimo_dia = calendar.monthrange(ano, mes_fim)[1]
-  dia_fim = f"{ano}-{mes_fim:02d}-{ultimo_dia:02d}"
+    dia_ini = f"{ano}-{mes_ini:02d}-01"
+    ultimo_dia = calendar.monthrange(ano, mes_fim)[1]
+    dia_fim = f"{ano}-{mes_fim:02d}-{ultimo_dia:02d}"
 
-  if usar_forecast:
-    hoje_str = hoje.strftime("%Y-%m-%d")
-    if dia_ini > hoje_str:
-      url = _ARCHIVE_URL
-      dia_ini = f"{ano - 1}-{mes_ini:02d}-01"
-      ultimo_dia = calendar.monthrange(ano - 1, mes_fim)[1]
-      dia_fim = f"{ano - 1}-{mes_fim:02d}-{ultimo_dia:02d}"
-    elif dia_fim > hoje_str:
-      dia_fim = hoje_str
+    if usar_forecast:
+        hoje_str = hoje.strftime("%Y-%m-%d")
+        if dia_ini > hoje_str:
+            url = _ARCHIVE_URL
+            dia_ini = f"{ano - 1}-{mes_ini:02d}-01"
+            ultimo_dia = calendar.monthrange(ano - 1, mes_fim)[1]
+            dia_fim = f"{ano - 1}-{mes_fim:02d}-{ultimo_dia:02d}"
+        elif dia_fim > hoje_str:
+            dia_fim = hoje_str
 
-  params = {
-      "latitude": geo["lat"],
-      "longitude": geo["lon"],
-      "start_date": dia_ini,
-      "end_date": dia_fim,
-      "daily": "temperature_2m_mean,temperature_2m_max,temperature_2m_min",
-      "timezone": "auto",
-  }
-  r = requests.get(url, params=params, timeout=20)
-  r.raise_for_status()
-  d = r.json().get("daily", {})
+    params = {
+        "latitude": geo["lat"],
+        "longitude": geo["lon"],
+        "start_date": dia_ini,
+        "end_date": dia_fim,
+        "daily": "temperature_2m_mean,temperature_2m_max,temperature_2m_min",
+        "timezone": "auto",
+    }
+    r = requests.get(url, params=params, timeout=20)
+    r.raise_for_status()
+    d = r.json().get("daily", {})
 
-  temps_medias = [t for t in (d.get("temperature_2m_mean") or []) if t is not None]
-  temps_max = [t for t in (d.get("temperature_2m_max") or []) if t is not None]
-  temps_min = [t for t in (d.get("temperature_2m_min") or []) if t is not None]
+    temps_medias = [t for t in (d.get("temperature_2m_mean") or []) if t is not None]
+    temps_max = [t for t in (d.get("temperature_2m_max") or []) if t is not None]
+    temps_min = [t for t in (d.get("temperature_2m_min") or []) if t is not None]
 
-  if not temps_medias:
-    raise ValueError(f"Sem dados para {nome_cidade} no período solicitado")
+    if not temps_medias:
+        raise ValueError(f"Sem dados para {nome_cidade} no período solicitado")
 
-  return {
-      "nome": geo["nome"],
-      "pais": geo["pais"],
-      "media": round(sum(temps_medias) / len(temps_medias), 1),
-      "maxima": round(max(temps_max), 1) if temps_max else None,
-      "minima": round(min(temps_min), 1) if temps_min else None,
-      "dias": len(temps_medias),
-  }
+    return {
+        "nome": geo["nome"],
+        "pais": geo["pais"],
+        "media": round(sum(temps_medias) / len(temps_medias), 1),
+        "maxima": round(max(temps_max), 1) if temps_max else None,
+        "minima": round(min(temps_min), 1) if temps_min else None,
+        "dias": len(temps_medias),
+    }
 
 
 @app.route("/api/clima/comparar", methods=["GET"])
 def comparar_clima():
-  cidade1 = request.args.get("cidade1", "").strip()
-  cidade2 = request.args.get("cidade2", "").strip()
-  ano = request.args.get("ano", type=int)
-  mes_ini = request.args.get("mes_ini", 1, type=int)
-  mes_fim = request.args.get("mes_fim", mes_ini, type=int)
+    cidade1 = request.args.get("cidade1", "").strip()
+    cidade2 = request.args.get("cidade2", "").strip()
+    ano = request.args.get("ano", type=int)
+    mes_ini = request.args.get("mes_ini", 1, type=int)
+    mes_fim = request.args.get("mes_fim", mes_ini, type=int)
 
-  if not cidade1 or not cidade2 or not ano:
-    return (
-        jsonify({"erro": "Parâmetros obrigatórios: cidade1, cidade2, ano"}),
-        400,
-    )
+    if not cidade1 or not cidade2 or not ano:
+        return (
+            jsonify({"erro": "Parâmetros obrigatórios: cidade1, cidade2, ano"}),
+            400,
+        )
 
-  chave_cache = f"{cidade1}|{cidade2}|{ano}|{mes_ini}|{mes_fim}"
-  if chave_cache in _cache_clima:
-    return jsonify(_cache_clima[chave_cache]), 200
+    chave_cache = f"{cidade1}|{cidade2}|{ano}|{mes_ini}|{mes_fim}"
+    if chave_cache in _cache_clima:
+        return jsonify(_cache_clima[chave_cache]), 200
 
-  try:
-    resultado = {
-        "ano": ano,
-        "periodo": f"{mes_ini:02d}/{ano} a {mes_fim:02d}/{ano}",
-        "cidades": [
-            _clima_cidade(cidade1, ano, mes_ini, mes_fim),
-            _clima_cidade(cidade2, ano, mes_ini, mes_fim),
-        ],
-    }
-    _cache_clima[chave_cache] = resultado
-    return jsonify(resultado), 200
-  except (requests.RequestException, ValueError, TypeError, KeyError) as e:
-    print(f"Erro em /api/clima/comparar: {e}")
-    return jsonify({"erro": str(e)}), 500
+    try:
+        resultado = {
+            "ano": ano,
+            "periodo": f"{mes_ini:02d}/{ano} a {mes_fim:02d}/{ano}",
+            "cidades": [
+                _clima_cidade(cidade1, ano, mes_ini, mes_fim),
+                _clima_cidade(cidade2, ano, mes_ini, mes_fim),
+            ],
+        }
+        _cache_clima[chave_cache] = resultado
+        return jsonify(resultado), 200
+    except (requests.RequestException, ValueError, TypeError, KeyError) as e:
+        print(f"Erro em /api/clima/comparar: {e}")
+        return jsonify({"erro": str(e)}), 500
 
 
 # ==============================================================================
@@ -611,9 +614,9 @@ render();
 
 @app.route("/", methods=["GET"])
 def dashboard_web():
-  return Response(PAGINA_HTML, mimetype="text/html")
+    return Response(PAGINA_HTML, mimetype="text/html")
 
 
 if __name__ == "__main__":
-  print("🚀 Iniciando Servidor Flask IoT em http://localhost:5000 ...")
-  app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
+    print("🚀 Iniciando Servidor Flask IoT em http://localhost:5000 ...")
+    app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
