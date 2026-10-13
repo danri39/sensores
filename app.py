@@ -427,7 +427,7 @@ function traduzir(chave, val) {
       if (n < 3000) return "🌱 Solo Ideal ("+Math.round(n)+")";
       return "🌵 Solo Seco! ("+Math.round(n)+")";
     case "luminosidade_lux": return "☀️ "+Math.round(n)+" Lux";
-    case "chama_estado": return n == 0 ? "🔥 ALERTA: FOGO DETECTADO!" : "🟢 Sem Fogo";
+    case "chama_estado": return n == 0 ? "🟢 Sem Fogo" : "🔥 ALERTA: FOGO DETECTADO!";
     case "mq135_analogico":
       return n > 1200 ? "🔴 Qualidade Ruim ("+Math.round(n)+")" : "🟢 Qualidade Boa ("+Math.round(n)+")";
   }
