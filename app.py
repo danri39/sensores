@@ -189,8 +189,8 @@ def receber_leitura_esp32():
         ]
         valores = [dados.get(c) for c in campos]
 
-        # --- INVERSÃO DO SENSOR DE FOGO ---
-        # Se o ESP32 enviar 0 (falso positivo contínuo), salvamos como 1 (Sem Fogo)
+        # --- CORREÇÃO DEFINITIVA DO SENSOR DE FOGO ---
+        # Se o sensor enviar 0 (falso positivo), converte para 1 (🟢 Sem Fogo)
         if valores[8] is not None:
             try:
                 chama_val = int(valores[8])
