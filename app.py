@@ -189,9 +189,14 @@ def receber_leitura_esp32():
         ]
         valores = [dados.get(c) for c in campos]
 
-        # Tratamento opcional para corrigir a lógica invertida do sensor de chama (índice 8)
-        # Se o ESP32 enviar 0 para fogo e 1 para sem fogo, podemos inverter caso necessário.
-        # Exemplo: se valores[8] == 0: valores[8] = 1 (ou vice-versa se preferir tratar no backend)
+        # --- INVERSÃO DO SENSOR DE FOGO ---
+        # Se o ESP32 enviar 0 (falso positivo contínuo), salvamos como 1 (Sem Fogo)
+        if valores[8] is not None:
+            try:
+                chama_val = int(valores[8])
+                valores[8] = 1 if chama_val == 0 else 0
+            except (ValueError, TypeError):
+                pass
 
         conn = obter_conexao_banco()
         cursor = conn.cursor()
@@ -427,7 +432,7 @@ function traduzir(chave, val) {
       if (n < 3000) return "🌱 Solo Ideal ("+Math.round(n)+")";
       return "🌵 Solo Seco! ("+Math.round(n)+")";
     case "luminosidade_lux": return "☀️ "+Math.round(n)+" Lux";
-    case "chama_estado": return n == 0 ? "🟢 Sem Fogo" : "🔥 ALERTA: FOGO DETECTADO!";
+    case "chama_estado": return n == 0 ? "🔥 ALERTA: FOGO DETECTADO!" : "🟢 Sem Fogo";
     case "mq135_analogico":
       return n > 1200 ? "🔴 Qualidade Ruim ("+Math.round(n)+")" : "🟢 Qualidade Boa ("+Math.round(n)+")";
   }
