@@ -175,6 +175,17 @@ def receber_leitura_esp32():
             print("⚠️ POST sem JSON. Content-Type:", request.content_type)
             return jsonify({"erro": "JSON inválido ou vazio"}), 400
 
+        # Trata diretamente a chave chama_estado recebida do ESP32
+        # Se o ESP32 enviar 0 (sensor acionado sem fogo devido à lógica invertida do hardware), 
+        # gravamos como 1 no banco para a dashboard exibir "Sem Fogo".
+        chama_raw = dados.get("chama_estado")
+        if chama_raw is not None:
+            try:
+                chama_num = int(chama_raw)
+                dados["chama_estado"] = 1 if chama_num == 0 else 0
+            except (ValueError, TypeError):
+                pass
+
         campos = [
             "temperatura",
             "umidade_ar",
@@ -188,15 +199,6 @@ def receber_leitura_esp32():
             "mq135_analogico",
         ]
         valores = [dados.get(c) for c in campos]
-
-        # --- CORREÇÃO DEFINITIVA DO SENSOR DE FOGO ---
-        # Se o sensor enviar 0 (falso positivo), converte para 1 (🟢 Sem Fogo)
-        if valores[8] is not None:
-            try:
-                chama_val = int(valores[8])
-                valores[8] = 1 if chama_val == 0 else 0
-            except (ValueError, TypeError):
-                pass
 
         conn = obter_conexao_banco()
         cursor = conn.cursor()
